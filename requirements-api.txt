@@ -1,0 +1,5 @@
+# FastAPI layer for the v0.6 migration (existing v0.5 engine remains in place)
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+pydantic>=2,<3
+# Tests only: python -m pip install pytest httpx
