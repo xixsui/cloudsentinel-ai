@@ -1,0 +1,63 @@
+# Python / test outputs
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+venv/
+.venv/
+
+# Local secrets: never commit
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+*.pem
+*.key
+*.p12
+*.pfx
+.credentials/
+
+# Runtime, cloud reports, and raw telemetry (may contain sensitive data)
+*.db
+*.sqlite
+*.sqlite3
+*.db-*
+*.sqlite-*
+*.db.bak
+logs/*
+!logs/.gitkeep
+data/*
+!data/.gitkeep
+prowler-scans/
+output/
+*.ocsf.json
+*.log
+
+# System/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Next.js / Node v0.6
+node_modules/
+.next/
+*.tsbuildinfo
+apps/web/.env*
+!apps/web/.env.example
+
+# Private runtime exports and backups
+.next*/
+*backup*/
+*.zip
+*.db*
+*.sqlite*
+.aws/
+.credentials/
+benchmark_results/

@@ -1,0 +1,77 @@
+[
+  {
+    "time_dt": "2026-01-01T00:00:00Z",
+    "status_code": "FAIL",
+    "cloud": {
+      "provider": "aws",
+      "account": {
+        "uid": "000000000000"
+      }
+    },
+    "resources": [
+      {
+        "uid": "demo-fixed",
+        "region": "us-east-1"
+      }
+    ],
+    "unmapped": {
+      "check_id": "s3_bucket_public_access",
+      "scan_id": "synthetic-scan-1"
+    },
+    "metadata": {
+      "product": {
+        "version": "synthetic-1"
+      }
+    }
+  },
+  {
+    "time_dt": "2026-01-01T00:00:00Z",
+    "status_code": "FAIL",
+    "cloud": {
+      "provider": "aws",
+      "account": {
+        "uid": "000000000000"
+      }
+    },
+    "resources": [
+      {
+        "uid": "demo-persisting",
+        "region": "us-east-1"
+      }
+    ],
+    "unmapped": {
+      "check_id": "s3_bucket_public_access",
+      "scan_id": "synthetic-scan-1"
+    },
+    "metadata": {
+      "product": {
+        "version": "synthetic-1"
+      }
+    }
+  },
+  {
+    "time_dt": "2026-01-01T00:00:00Z",
+    "status_code": "FAIL",
+    "cloud": {
+      "provider": "aws",
+      "account": {
+        "uid": "000000000000"
+      }
+    },
+    "resources": [
+      {
+        "uid": "demo-not-rechecked",
+        "region": "us-east-1"
+      }
+    ],
+    "unmapped": {
+      "check_id": "s3_bucket_public_access",
+      "scan_id": "synthetic-scan-1"
+    },
+    "metadata": {
+      "product": {
+        "version": "synthetic-1"
+      }
+    }
+  }
+]

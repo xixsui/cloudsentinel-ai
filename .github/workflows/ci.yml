@@ -1,0 +1,51 @@
+name: Python CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install runtime and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-api.txt pytest httpx ruff
+      - name: Check syntax
+        run: python -m compileall -q backend_api ai_module cloud_connection config dashboard mock_data orchestrator prowler_module siem_module
+      - name: Run offline tests (no AWS or AI API keys required)
+        run: python -m pytest -q
+      - name: Lint security-critical refactor
+        run: ruff check ai_module/correlation.py config/user_settings.py
+
+  web-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install packages
+        run: npm install --no-audit --no-fund
+      - name: Check local same-origin protection
+        run: node --experimental-strip-types --test tests/localOrigin.test.mjs
+      - name: Typecheck and build Next.js
+        run: npm run build
