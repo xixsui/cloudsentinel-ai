@@ -25,6 +25,23 @@ The application starts empty. Import your own Prowler OCSF JSON, or connect AWS 
 
 No remediation commands are executed automatically. A failed check is not evidence of an attack; a PASS is not proof of complete account security. Prowler errors with only an exit code cannot be reliably attributed to a specific AWS cause.
 
+## Interface
+
+Screenshots show an empty, disconnected workspace. No real AWS accounts, credentials or scan reports are displayed.
+
+### Overview and first use
+
+![Empty workspace overview](docs/images/overview.png)
+
+<details>
+<summary>Scan readiness and settings</summary>
+
+![Scan readiness checks](docs/images/scans.png)
+
+![AWS connection settings with empty credential fields](docs/images/settings.png)
+
+</details>
+
 ## Development
 
 ```bash
