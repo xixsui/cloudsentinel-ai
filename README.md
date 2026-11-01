@@ -1,0 +1,35 @@
+# CloudSentinel AI
+
+Local AWS security posture workspace with optional AI-assisted remediation guidance.
+
+**Preview release — Linux/WSL, single operator, localhost only.** No login/RBAC or multi-user isolation. Do not expose the UI or API publicly. Real AWS scan and AI provider end-to-end acceptance remain outstanding; offline tests are not a substitute.
+
+## Start here
+
+- [Installation and first use](docs/getting-started.md)
+- [Scanning, snapshots and verification](docs/web-scanning.md)
+- [AI settings](docs/ai-settings.md)
+- [Security policy](SECURITY.md)
+- [Contributing](CONTRIBUTING.md)
+
+The application starts empty. Import your own Prowler OCSF JSON, or connect AWS in Settings and explicitly authorize a scan. No credentials or AI subscription are needed to browse the empty workspace. Synthetic fixtures in `mock_data/scan_history` are optional and must be imported as synthetic data.
+
+## Implemented
+
+- AWS connection settings, read-only resource inventory and diagnostics.
+- Prowler setup in a separate Linux environment; service/region selection, cancellation and persisted job history.
+- OCSF import, finding filters, immutable snapshots for new imports and report comparison.
+- Remediation tracking and explicit rechecks; only matching fresh PASS evidence can verify a case.
+- Optional AI providers with backend credentials, prompt preview, best-effort redaction and explicit consent.
+- Local finding/history deletion and actionable scan failure guidance.
+
+No remediation commands are executed automatically. A failed check is not evidence of an attack; a PASS is not proof of complete account security. Prowler errors with only an exit code cannot be reliably attributed to a specific AWS cause.
+
+## Development
+
+```bash
+python -m pip install pytest httpx
+python -m pytest -q
+cd apps/web
+npm run build
+```
