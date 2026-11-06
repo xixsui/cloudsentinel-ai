@@ -7,6 +7,7 @@ import { AIStatus } from "@/lib/types";
 
 import AWSDiagnostics from "@/components/AWSDiagnostics";
 import AWSSettings from "@/components/AWSSettings";
+import WorkspaceBackup from "@/components/WorkspaceBackup";
 import DataSettings from "@/components/DataSettings";
 import ScannerSettings from "@/components/ScannerSettings";
 
@@ -117,6 +118,6 @@ export default function SettingsPage() {
         if (!provider) {setProvider(response.status.provider || ""); setModel(response.status.model || "");}
       }}/>)}</div>
     </>}
-    <DataSettings/>
+    <WorkspaceBackup/><DataSettings/>
   </div>;
 }

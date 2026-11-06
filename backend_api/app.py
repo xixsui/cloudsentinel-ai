@@ -40,7 +40,7 @@ from backend_api.scanner_setup import manager as scanner_setup
 app = FastAPI(
     title="CloudSentinel AI Local API",
     description="v0.7 development API: local operator only, not an authenticated SaaS platform.",
-    version="0.9.0",
+    version="0.9.1",
     docs_url="/docs",
     redoc_url=None,
 )
@@ -324,7 +324,7 @@ def find_or_404(db: Database, finding_id: str) -> Finding:
 
 @app.get("/api/v1/health")
 def health() -> dict:
-    return {"status": "ok", "version": "0.9.0", "mode": "local-development"}
+    return {"status": "ok", "version": "0.9.1", "mode": "local-development"}
 
 
 @app.get("/api/v1/posture/summary")
@@ -582,3 +582,52 @@ def cancel_scan(job_id: str) -> dict:
         return {"message": "Cancellation requested. Wait for terminal job status."}
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+
+
+async def archive_request(request: Request):
+    import json
+    from backend_api.workspace_archive import LIMIT
+    raw = bytearray()
+    async for chunk in request.stream():
+        raw.extend(chunk)
+        if len(raw) > LIMIT + 4096:
+            raise HTTPException(413, "Archive exceeds 20 MB.")
+    try:
+        return json.loads(raw)
+    except (ValueError, UnicodeError):
+        raise HTTPException(422, "Choose a valid CloudSentinel JSON archive.")
+
+
+@app.post("/api/v1/settings/data/backup", dependencies=[Depends(require_write_token), Depends(protect_data_delete)])
+def backup_workspace(db: Annotated[Database, Depends(get_db)]):
+    from backend_api.workspace_archive import export_data
+    try:
+        return export_data(db.db_path)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/api/v1/settings/data/preview", dependencies=[Depends(require_write_token)])
+async def preview_workspace(request: Request):
+    import sqlite3
+    from backend_api.workspace_archive import validate
+    data = await archive_request(request)
+    try:
+        return validate(data)
+    except (ValueError, TypeError, KeyError, sqlite3.Error):
+        raise HTTPException(422, "Invalid or incompatible workspace archive. No data was changed.")
+
+
+@app.post("/api/v1/settings/data/restore", dependencies=[Depends(require_write_token), Depends(protect_data_delete)])
+async def restore_workspace(request: Request, db: Annotated[Database, Depends(get_db)]):
+    import sqlite3
+    from backend_api.workspace_archive import restore
+    body = await archive_request(request)
+    if not isinstance(body, dict) or set(body) != {"archive", "sha256", "confirmation"} or body["confirmation"] != "RESTORE":
+        raise HTTPException(422, "Type RESTORE to replace local data.")
+    try:
+        return restore(db.db_path, body["archive"], body["sha256"])
+    except (ValueError, TypeError, KeyError, sqlite3.Error):
+        raise HTTPException(422, "Restore validation failed. Preview the archive again. Current data was preserved.")
+    except OSError:
+        raise HTTPException(409, "Unable to save the recovery backup. Check disk space and permissions. Current data was preserved.")

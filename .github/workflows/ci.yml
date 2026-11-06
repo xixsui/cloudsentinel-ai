@@ -44,8 +44,22 @@ jobs:
         with:
           node-version: '22'
       - name: Install packages
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Check local same-origin protection
         run: node --experimental-strip-types --test tests/localOrigin.test.mjs
       - name: Typecheck and build Next.js
         run: npm run build
+
+  locked-linux-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned Linux dependencies
+        run: |
+          python -m pip install -r requirements-linux-py312.lock
+          python -m pip check
+          python -m pytest -q

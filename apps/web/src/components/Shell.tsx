@@ -1,4 +1,5 @@
 "use client";
+import SystemStatus from "./SystemStatus";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Activity, ArrowUpRight, CircleHelp, Cloud, LayoutDashboard, ListChecks, Radar, ShieldCheck, Settings } from "lucide-react";
@@ -23,7 +24,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     </aside>
     <div className="main-shell">
       <header className="topbar"><div className="breadcrumb"><Activity size={15}/> CSPM Workspace <span>/</span> {current==="/"?"Overview":current.startsWith("/settings")?"Settings":current.startsWith("/scans")?"Scan History":current.startsWith("/remediation")?"Remediation Tracker":"Misconfigurations"}</div><div className="topbar-right"><span className="topbar-badge">LOCAL PREVIEW</span><CircleHelp size={17} className="muted-ink"/></div></header>
-      <main className="content">{children}</main>
+      <main className="content"><SystemStatus/>{children}</main>
     </div>
   </div>;
 }

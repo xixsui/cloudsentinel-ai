@@ -4,6 +4,12 @@ Local AWS security posture workspace with optional AI-assisted remediation guida
 
 **Preview release — Linux/WSL, single operator, localhost only.** No login/RBAC or multi-user isolation. Do not expose the UI or API publicly. Real AWS scan and AI provider end-to-end acceptance remain outstanding; offline tests are not a substitute.
 
+## Run locally
+
+Install Python 3.12 and Node.js 22, then run `bash scripts/setup-linux.sh` inside Linux/WSL. Start with `bash scripts/start-linux.sh` (Linux) or **Start CloudSentinel.cmd** (Windows). Use the matching stop script to stop only CloudSentinel.
+
+Settings includes workspace backup/restore; credentials are excluded. The status panel distinguishes API failures from AWS connection state.
+
 ## Start here
 
 - [Installation and first use](docs/getting-started.md)

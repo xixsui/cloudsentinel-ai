@@ -6,21 +6,40 @@ Linux or WSL2 (Ubuntu recommended), Python 3.10+ with venv support, Node.js 22 a
 
 Extract the source into your Linux home directory for better filesystem performance. In WSL, Windows `C:\Users` is `/mnt/c/Users`, not `C:/Users`.
 
-From the extracted project root:
+From the extracted project root, install the pinned Linux/WSL environment once (Python 3.12 and Node.js 22):
 
 ```bash
-python3 -m venv ~/.venvs/cloudsentinel-ai
-source ~/.venvs/cloudsentinel-ai/bin/activate
-python -m pip install -r requirements.txt -r requirements-api.txt
-cd apps/web
-npm install
-cd ../..
-bash scripts/start-web.sh
+bash scripts/setup-linux.sh
 ```
 
-Open http://127.0.0.1:3000 . Keep the launcher running; Ctrl+C stops the services. The launcher builds the UI as needed and starts both frontend and backend with the matching local write token. Running `npm run dev` alone does not start the API.
+This installs into the Linux user environment `~/.venvs/cloudsentinel-ai` (override with `CLOUDSENTINEL_VENV` for both setup and start), uses `requirements-linux-py312.lock` and `npm ci` with `apps/web/package-lock.json`, then builds the UI. It does not install OS packages or Prowler. The Python lock targets Linux Python 3.12; the broader requirements files remain available for developers testing other Python versions.
 
-If Python reports missing venv support, install the Python venv package for your Linux distribution first. If a port is busy, stop your previous launcher before retrying. This release does not install OS packages automatically.
+## Start and stop
+
+Linux desktop or terminal:
+
+```bash
+bash scripts/start-linux.sh
+bash scripts/stop-linux.sh
+```
+
+Windows: double-click **Start CloudSentinel.cmd** or **Stop CloudSentinel.cmd** after completing setup inside WSL. Scripts use your default WSL distribution. To choose another, run `powershell -File scripts/start-windows.ps1 -Distro Ubuntu-24.04` (use the matching distribution for stop). If the checkout is inside the Linux filesystem, use the Linux commands inside WSL instead.
+
+The start script opens the browser where supported and runs both services on loopback. The stop script stops only this project's managed processes; it does not shut down WSL or other applications. Stop interrupts active scans/installations, so wait for them to complete first. Foreground development remains available with `bash scripts/start-web.sh` and Ctrl+C.
+
+Open http://127.0.0.1:3000. Startup progress and errors are in `.runtime/service.log`; the log is private runtime data and ignored by Git. Ports 3000/8000 must be free. A second start does not create duplicate services. A port conflict does not kill unrelated processes.
+
+Windows paths with spaces are supported. WSL file access on `/mnt/c` can be slower; Linux users should keep the checkout in their home directory. Never run setup/start with sudo.
+
+## Connection status
+
+Every page displays local API status and a manual Check connection action. AWS disconnected is shown separately from API failure. A timeout advises checking operation state before retrying writes; a connection failure links the problem to starting the local services. Reload after service recovery to refresh page data.
+
+## Backup and restore
+
+Settings → Backup and restore downloads a versioned JSON archive (maximum 20 MB / 100,000 records). It includes findings, scan evidence/snapshots, remediation history, incidents and saved AI analysis/feedback. AWS/AI credentials, app settings, transient scan jobs and AI cache are excluded. Evidence and notes can contain sensitive information; keep archives private.
+
+Select an archive to validate and preview record counts, then type RESTORE to replace current data. The exact previewed content is checked again before the atomic replacement. A private pre-restore recovery archive is saved under `~/.local/share/cloudsentinel/recovery/`. You can restore that JSON through the same interface. Active scans or data writes block export/restore. Restored Verified states are historical records, not fresh verification. Invalid archives are rejected without replacing data.
 
 ## First use
 
@@ -38,7 +57,7 @@ Before replacing your installation, stop the launcher and back up runtime data p
 
 ## Troubleshooting
 
-- **Local API unavailable:** start the complete application with `bash scripts/start-web.sh`, then use port 3000.
+- **Local API unavailable:** start the complete application with `bash scripts/start-linux.sh` or Start CloudSentinel.cmd, then use port 3000.
 - **Expired credentials:** renew/sign in, reconnect in Settings, then explicitly retry.
 - **Read denied:** review supported read-access diagnostics with your account administrator; do not grant unrestricted permissions just to suppress errors.
 - **Old snapshot unavailable:** reimport the original report. Current findings are not substituted for missing historical evidence.

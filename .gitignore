@@ -61,3 +61,6 @@ apps/web/.env*
 .aws/
 .credentials/
 benchmark_results/
+
+.runtime/
+cloudsentinel-workspace-*.json

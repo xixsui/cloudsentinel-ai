@@ -2,12 +2,13 @@
 # Daily local use: production Next.js avoids on-demand development compilation.
 set -Eeuo pipefail
 cd "$(dirname "$0")/.."
-if [[ -z "${VIRTUAL_ENV:-}" && -f "$HOME/.venvs/cloudsentinel-ai/bin/activate" ]]; then
-  source "$HOME/.venvs/cloudsentinel-ai/bin/activate"
+env_dir="${CLOUDSENTINEL_VENV:-$HOME/.venvs/cloudsentinel-ai}"
+if [[ -z "${VIRTUAL_ENV:-}" && -f "$env_dir/bin/activate" ]]; then
+  source "$env_dir/bin/activate"
 fi
 command -v npm >/dev/null || { echo 'Node.js/npm is required.'; exit 1; }
 python -c 'import fastapi,uvicorn' || { echo 'Activate the project Python environment first.'; exit 1; }
-[[ -d apps/web/node_modules ]] || { echo 'Install frontend dependencies: cd apps/web && npm install'; exit 1; }
+[[ -d apps/web/node_modules ]] || { echo 'Install frontend dependencies: bash scripts/setup-linux.sh'; exit 1; }
 
 # Fail before launching either service when one of the intended ports is occupied.
 python - <<'PY'
@@ -28,7 +29,7 @@ if [[ ! -f "$build_id" ]]; then
 elif [[ -n "$(find apps/web/src -type f -newer "$build_id" -print -quit)" ]]; then
   rebuild=true
 else
-  for config in apps/web/package.json apps/web/package-lock.json apps/web/pnpm-lock.yaml apps/web/next.config.ts apps/web/tsconfig.json; do
+  for config in apps/web/package.json apps/web/package-lock.json apps/web/next.config.ts apps/web/tsconfig.json; do
     if [[ -f "$config" && "$config" -nt "$build_id" ]]; then rebuild=true; fi
   done
 fi
