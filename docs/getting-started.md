@@ -2,7 +2,7 @@
 
 ## Requirements
 
-Linux or WSL2 (Ubuntu recommended), Python 3.10+ with venv support, Node.js 22 and npm. Internet access is needed to install dependencies. Prowler is optional for importing existing reports.
+Linux or WSL2 (Ubuntu recommended), Python 3.12 with venv support, Node.js 22 and npm. Internet access is needed to install dependencies. Prowler is optional for importing existing reports.
 
 Extract the source into your Linux home directory for better filesystem performance. In WSL, Windows `C:\Users` is `/mnt/c/Users`, not `C:/Users`.
 
@@ -33,7 +33,9 @@ Windows paths with spaces are supported. WSL file access on `/mnt/c` can be slow
 
 ## Connection status
 
-Every page displays local API status and a manual Check connection action. AWS disconnected is shown separately from API failure. A timeout advises checking operation state before retrying writes; a connection failure links the problem to starting the local services. Reload after service recovery to refresh page data.
+When the local API health check fails, a recovery notice offers Check connection and Reload page. Healthy connections do not show a banner. AWS connection details remain in Settings; the Overview resource inventory appears only when AWS is connected. A timeout advises checking operation state before retrying writes. Reload after service recovery to refresh page data.
+
+Overview shows a short getting-started hint while AWS is disconnected and no reports or findings are stored. Connecting AWS or importing a report hides the hint. Finding filters appear once stored reports or findings are available.
 
 ## Backup and restore
 

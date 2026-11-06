@@ -43,7 +43,7 @@ export default function Overview(){
 
   <AWSOverview/>
 
-  <ScopeFilter value={scope} onChange={setScope}/>
+  <ScopeFilter value={scope} onChange={setScope} hideWhenEmpty/>
 
   <p className="muted">Stored findings accounts: {summary?.accounts?.join(", ") || "None / unknown"} · Latest finding evidence: {summary?.latest_evidence_at ? new Date(summary.latest_evidence_at).toLocaleString() : "None"}</p>
 

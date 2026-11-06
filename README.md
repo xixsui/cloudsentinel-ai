@@ -8,7 +8,7 @@ Local AWS security posture workspace with optional AI-assisted remediation guida
 
 Install Python 3.12 and Node.js 22, then run `bash scripts/setup-linux.sh` inside Linux/WSL. Start with `bash scripts/start-linux.sh` (Linux) or **Start CloudSentinel.cmd** (Windows). Use the matching stop script to stop only CloudSentinel.
 
-Settings includes workspace backup/restore; credentials are excluded. The status panel distinguishes API failures from AWS connection state.
+Settings includes workspace backup/restore; credentials are excluded. API recovery guidance appears only when the local API is unavailable. AWS connection details are available in Settings.
 
 ## Start here
 

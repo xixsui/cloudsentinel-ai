@@ -19,6 +19,7 @@ export default function AWSOverview() {
   const snap = data?.snapshot;
   const rows = snap?.resources.filter(r => `${r.service} ${r.name} ${r.id} ${r.region}`.toLowerCase().includes(filter.toLowerCase())) || [];
   const counts = snap?.resources.reduce<Record<string,number>>((out,r) => {out[r.service]=(out[r.service]||0)+1; return out;}, {}) || {};
+  if (!error && !data?.connected) return null;
   return <section className="panel settings-provider">
     <div className="settings-provider-heading"><div><h2>AWS resources</h2><p className="muted">Read-only account inventory, separate from imported security findings.</p></div><Link className="btn-outline" href="/settings#aws">AWS settings</Link></div>
     {error && <p className="error-inline" role="alert">{error} <button className="btn-outline" onClick={() => {setError(""); void load();}}>Retry</button></p>}
