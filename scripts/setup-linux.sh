@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Run once on Linux, or inside WSL. No sudo or automatic OS package changes.
 set -Eeuo pipefail
+trap 'echo "Setup did not finish. Review the failed step above; fix it and rerun setup. Run bash scripts/check-linux.sh for local diagnostics." >&2' ERR
 cd "$(dirname "$0")/.."
 if ! command -v node >/dev/null && [[ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]]; then
   source "${NVM_DIR:-$HOME/.nvm}/nvm.sh"

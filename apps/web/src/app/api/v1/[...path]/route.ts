@@ -9,7 +9,7 @@ async function proxy(req: NextRequest, segments: string[], method: "GET" | "PATC
   const endpoint = segments.join("/");
   const allowedGet = /^(workspace\/status|scans\/jobs|settings\/(ai|aws|scanner)|aws\/inventory|scans|scans\/compare|health|posture\/summary|findings|findings\/[\w-]+|remediations|remediations\/[\w-]+\/activity|ai\/status|findings\/[\w-]+\/ai\/(history|preview))$/;
   const allowedPatch = /^remediations\/[\w-]+$/;
-  const allowedPost = /^(settings\/scanner\/install|findings\/[\w-]+\/recheck|scans\/start|scans\/jobs\/[a-f0-9]+\/cancel|settings\/aws\/(connect|disconnect|connect-saved|remove-saved)|settings\/data\/(delete|backup|preview|restore)|aws\/inventory\/refresh|scans\/import|findings\/[\w-]+\/ai\/analyze)$/;
+  const allowedPost = /^(settings\/scanner\/install|findings\/[\w-]+\/recheck|scans\/start|scans\/jobs\/[a-f0-9]+\/cancel|settings\/aws\/(connect|disconnect|connect-saved|remove-saved)|settings\/data\/(delete|backup|preview|restore)|aws\/inventory\/refresh|scans\/(import|preview)|findings\/[\w-]+\/ai\/analyze)$/;
   const allowedPut = /^(settings\/ai\/(default|credential)|findings\/[\w-]+\/ai\/runs\/[0-9]+\/feedback)$/;
   const allowed = method === "GET" ? allowedGet : method === "PATCH" ? allowedPatch : method === "PUT" ? allowedPut : allowedPost;
   if (!allowed.test(endpoint)) return NextResponse.json({ detail: "Not found" }, { status: 404 });
@@ -38,10 +38,11 @@ async function proxy(req: NextRequest, segments: string[], method: "GET" | "PATC
   try {
     let body: string | undefined;
     if (method !== "GET") {
-      if (endpoint.startsWith("settings/data/")) {
+      if (endpoint.startsWith("settings/data/") || endpoint === "scans/import" || endpoint === "scans/preview") {
+        const limit = endpoint.startsWith("scans/") ? 10*1024*1024+4096 : 20*1024*1024+4096;
         const reader=req.body?.getReader(); const chunks: Uint8Array[]=[]; let size=0;
         if(reader) { while(true) { const {done,value}=await reader.read(); if(done) break; size+=value.byteLength;
-          if(size>20*1024*1024+4096) { await reader.cancel(); return NextResponse.json({detail:"Archive exceeds 20 MB."},{status:413}); } chunks.push(value); } }
+          if(size>limit) { await reader.cancel(); return NextResponse.json({detail:"Request exceeds the upload size limit."},{status:413}); } chunks.push(value); } }
         body=Buffer.concat(chunks).toString("utf8");
       } else body=await req.text();
     }

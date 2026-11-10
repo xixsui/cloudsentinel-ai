@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 cd "$(dirname "$0")/.."
 env_dir="${CLOUDSENTINEL_VENV:-$HOME/.venvs/cloudsentinel-ai}"
-if [[ -z "${VIRTUAL_ENV:-}" && -f "$env_dir/bin/activate" ]]; then
+if [[ -f "$env_dir/bin/activate" ]]; then
   source "$env_dir/bin/activate"
 fi
 command -v npm >/dev/null || { echo 'Node.js/npm is required.'; exit 1; }

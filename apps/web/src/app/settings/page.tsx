@@ -94,6 +94,7 @@ export default function SettingsPage() {
     <div className="page-top"><div><p className="eyebrow">WORKSPACE PREFERENCES</p><h1>Settings</h1><p className="page-subtitle">Manage AWS connections, AI providers and local data.</p></div><Settings2 size={25}/></div>
     {error && <p className="error-inline" role="alert">{error}</p>}
     <nav className="ai-actions" aria-label="Settings sections"><a className="btn-outline" href="#aws">AWS connection</a><a className="btn-outline" href="#scanner">Prowler scanner</a><a className="btn-outline" href="#ai">AI providers</a><a className="btn-outline" href="#data">Data management</a></nav>
+    <section className="panel settings-provider"><h2>Installation diagnostics</h2><p>Windows: run <code>Check CloudSentinel.cmd</code>. Linux: run <code>bash scripts/check-linux.sh</code> from the project folder.</p><p className="muted">Checks Python, Node.js, dependencies, disk space, ports and local API health. Works even when this page cannot reach the backend. No AWS or AI requests are made.</p></section>
     <AWSSettings/>
     <AWSDiagnostics/>
     <ScannerSettings/>

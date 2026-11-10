@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import re
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
 REGION_RE = re.compile(r"^[a-z]{2}(?:-gov)?-[a-z0-9-]+-\d+$")
@@ -29,8 +30,13 @@ class AWSConnection:
     access_key_id: str = field(default="", repr=False)
     secret_access_key: str = field(default="", repr=False)
     session_token: str = field(default="", repr=False)
+    expires_at: str = ""
 
     def __post_init__(self) -> None:
+        if self.expires_at:
+            expiry = datetime.fromisoformat(self.expires_at.replace("Z", "+00:00"))
+            if self.mode != "temporary" or expiry.tzinfo is None:
+                raise ValueError("Expiration requires temporary credentials and a timezone")
         if self.mode not in SUPPORTED_MODES:
             raise ValueError("Unsupported AWS authentication mode")
         if not REGION_RE.fullmatch(self.region):
@@ -92,6 +98,8 @@ class AWSConnection:
 
     def test_identity(self) -> dict[str, str]:
         """Call the AWS STS identity endpoint; this is not a permissions audit."""
+        if self.credentials_expired:
+            raise ValueError("Temporary credentials have reached the supplied expiration. Renew them before connecting.")
         from botocore.config import Config
         sts = self.session().client("sts", config=Config(
             connect_timeout=5, read_timeout=10,
@@ -99,6 +107,10 @@ class AWSConnection:
         ))
         result = sts.get_caller_identity()
         return {k: str(result[k]) for k in ("Account", "Arn", "UserId")}
+
+    @property
+    def credentials_expired(self) -> bool:
+        return bool(self.expires_at and datetime.fromisoformat(self.expires_at.replace("Z", "+00:00")) <= datetime.now(timezone.utc))
 
     @property
     def label(self) -> str:

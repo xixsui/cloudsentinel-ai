@@ -22,7 +22,9 @@ _loading = False
 
 def status():
     with _lock:
-        return {"connected": _connection is not None, "identity": copy.deepcopy(_identity),
+        return {"connected": _connection is not None and not _connection.credentials_expired, "identity": copy.deepcopy(_identity),
+                "expires_at": (_connection.expires_at or None) if _connection else None,
+                "credentials_expired": _connection.credentials_expired if _connection else False,
                 "region": _connection.region if _connection else None,
                 "mode": _connection.mode if _connection else None,
                 "saved_access_key": bool(ai_preferences.load().get("aws_access_key")),
@@ -95,7 +97,7 @@ def collect(connection, identity):
                     truncated.append(label)
                     break
         except Exception as exc:
-            errors.append(f"{label}: {explain(exc)}")
+            errors.append(f"{label} ({service}:{''.join(part.title() for part in operation.split('_'))}): {explain(exc)}")
     return {"account": identity["Account"], "region": connection.region,
             "fetched_at": datetime.now(timezone.utc).isoformat(), "resources": resources,
             "errors": errors, "truncated": truncated}
@@ -104,7 +106,7 @@ def collect(connection, identity):
 def refresh():
     global _loading, _future
     with _lock:
-        if _connection is None:
+        if _connection is None or _connection.credentials_expired:
             raise ValueError("Connect AWS in Settings first")
         if _loading:
             return status()
@@ -143,6 +145,6 @@ def remove_saved():
 
 def scan_connection():
     with _lock:
-        if _connection is None or _identity is None:
+        if _connection is None or _identity is None or _connection.credentials_expired:
             raise ValueError("Connect AWS in Settings first")
         return _connection, _identity["Account"]

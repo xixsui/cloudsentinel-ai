@@ -107,3 +107,6 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .evidence-preview { max-height: 360px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 12px; background: var(--bg); }
 #scanner { scroll-margin-top: 24px; }
 @media(max-width:700px) { .tab-bar { flex-wrap: wrap; } .key-list b { overflow-wrap: anywhere; } .ai-review-card { min-width: 0; } .ai-review-card select { max-width: 100%; } }
+
+.aws-connection-steps { padding-left: 1.4rem; display: grid; gap: .65rem; }
+.settings-provider summary { cursor: pointer; font-weight: 600; padding: .5rem 0; }

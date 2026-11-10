@@ -19,6 +19,8 @@ export default function ScanHistory() {
   const [after, setAfter] = useState("");
   const [result, setResult] = useState<Comparison | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<(Scan & {duplicate:boolean; repeated_observations:number; warnings:string[]}) | null>(null);
+  const [pendingEvents, setPendingEvents] = useState<Record<string, unknown>[] | null>(null);
   const [synthetic, setSynthetic] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -34,20 +36,33 @@ export default function ScanHistory() {
   const load = async () => setScans((await api<{items: Scan[]}>("scans")).items);
   useEffect(() => { load().catch(e => setError(e.message)).finally(() => setLoading(false)); }, []);
 
-  async function importFile() {
+  async function previewFile() {
     if (!file) return;
-    setBusy(true); setError(""); setMessage(""); setResult(null);
+    setBusy(true); setError(""); setMessage(""); setResult(null); setPreview(null); setPendingEvents(null);
     try {
       if (file.size > 10 * 1024 * 1024) throw new Error("Choose a JSON file smaller than 10 MB.");
-      const data = JSON.parse(await file.text());
-      const events = Array.isArray(data) ? data : data.events ?? data.findings ?? data.results;
+      let data;
+      try {data = JSON.parse(await file.text());} catch {throw new Error("Invalid JSON. Export a Prowler OCSF JSON report and try again.");}
+      const events = Array.isArray(data) ? data : data?.events ?? data?.findings ?? data?.results;
       if (!Array.isArray(events)) throw new Error("Expected an OCSF event array or events/findings/results wrapper.");
-      const imported = await api<Scan>("scans/import", { method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({events, synthetic}) });
-      await load();
-      setMessage(`Report saved: ${imported.event_count} events, ${imported.findings_imported ?? 0} FAIL findings added or updated. Open Findings to review them. Remediation states are unchanged.${imported.comparison_notice ? " " + imported.comparison_notice : ""}`);
+      if (!events.length || events.length > 20000) throw new Error("Choose a report containing 1–20,000 events.");
+      setPreview(null); setPendingEvents(null);
+      const checked = await api<Scan & {duplicate:boolean; repeated_observations:number; warnings:string[]}>("scans/preview", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({events,synthetic})});
+      setPreview(checked); setPendingEvents(events);
     } catch (e) { setError(e instanceof Error ? e.message : "Import failed"); }
     finally { setBusy(false); }
+  }
+
+  async function confirmImport() {
+    if (!preview || !pendingEvents) return;
+    setBusy(true); setError("");
+    try {
+      const imported = await api<Scan>("scans/import", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({events:pendingEvents,synthetic,preview_id:preview.id})});
+      setPreview(null); setPendingEvents(null);
+      setMessage(`Report saved: ${imported.event_count} events; ${imported.findings_imported ?? 0} FAIL findings captured. Newer stored evidence is preserved. Remediation states are unchanged.`);
+      await load();
+    } catch(e) {setError(e instanceof Error ? e.message : "Import failed");}
+    finally {setBusy(false);}
   }
 
   async function compare() {
@@ -65,9 +80,18 @@ export default function ScanHistory() {
       Reports stay on this local server and are not sent to an AI provider.</div>
     <section id="import" className="panel scan-panel"><h2>Import OCSF JSON</h2>
       <div className="scan-controls"><label>Report file <input type="file" accept=".json,application/json" disabled={busy}
-        onChange={e => setFile(e.target.files?.[0] ?? null)}/></label>
-      <label><input type="checkbox" checked={synthetic} disabled={busy} onChange={e => setSynthetic(e.target.checked)}/> Synthetic demo data</label>
-      <button className="btn-outline" disabled={!file || busy} onClick={importFile}>{busy ? "Working…" : "Import report"}</button></div>
+        onChange={e => {setFile(e.target.files?.[0] ?? null);setPreview(null);setPendingEvents(null);setError("");setMessage("");}}/></label>
+      <label><input type="checkbox" checked={synthetic} disabled={busy} onChange={e => {setSynthetic(e.target.checked);setPreview(null);setPendingEvents(null);}}/> Synthetic demo data</label>
+      <button className="btn-outline" disabled={!file || busy} onClick={previewFile}>{busy ? "Working…" : "Preview report"}</button></div>
+      {preview && <div className="panel settings-provider" aria-label="Report preview"><h3>Review before importing</h3>
+        <p>Account: {preview.scope.accounts.join(", ") || "Unknown"} · Scan time: {formatDate(preview.scanned_at)}</p>
+        <p>{preview.synthetic ? "Synthetic demo" : "Historical report"} · {preview.event_count} events · {preview.observation_count} unique observations · {preview.repeated_observations} repeated observations</p>
+        <p>{Object.entries(preview.counts).map(([label,count])=>`${label}: ${count}`).join(" · ")}</p>
+        <p>{preview.findings_imported} FAIL findings captured. {preview.duplicate ? "Already imported." : "Not previously imported with this evidence label."}</p>
+        {preview.warnings.map(w=><p className="notice" key={w}>{w}</p>)}
+        <p className="muted">No report data has been added to this workspace. Import does not run AWS scans or mark remediation as verified.</p>
+        <div className="ai-actions"><button className="btn-primary" disabled={busy} onClick={()=>void confirmImport()}>Confirm import</button><button className="btn-outline" disabled={busy} onClick={()=>{setPreview(null);setPendingEvents(null);}}>Cancel</button></div>
+      </div>}
       <p className="page-subtitle">Maximum 10 MB / 20,000 events. FAIL findings appear in Overview and Misconfigurations. Leave Synthetic unchecked for real historical AWS reports.</p>
     </section>
     {error && <p className="error-inline" role="alert">{error}</p>}

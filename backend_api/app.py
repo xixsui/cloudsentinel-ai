@@ -40,7 +40,7 @@ from backend_api.scanner_setup import manager as scanner_setup
 app = FastAPI(
     title="CloudSentinel AI Local API",
     description="v0.7 development API: local operator only, not an authenticated SaaS platform.",
-    version="0.9.1",
+    version="0.9.2",
     docs_url="/docs",
     redoc_url=None,
 )
@@ -180,6 +180,7 @@ class AWSConnect(BaseModel):
     access_key_id: SecretStr = Field(default=SecretStr(""), max_length=128)
     secret_access_key: SecretStr = Field(default=SecretStr(""), max_length=512)
     session_token: SecretStr = Field(default=SecretStr(""), max_length=16384)
+    expires_at: str = Field(default="", max_length=64)
 
 
 @app.get("/api/v1/settings/aws")
@@ -194,7 +195,7 @@ def aws_connect(body: AWSConnect) -> dict:
         connection = AWSConnection(mode=body.mode, region=body.region, profile=body.profile,
                                    access_key_id=body.access_key_id.get_secret_value(),
                                    secret_access_key=body.secret_access_key.get_secret_value(),
-                                   session_token=body.session_token.get_secret_value())
+                                   session_token=body.session_token.get_secret_value(), expires_at=body.expires_at)
         if body.save_credentials and body.mode != "access_key":
             raise ValueError("Only Access Key credentials can be saved")
         return aws_workspace.connect(connection, persist=body.save_credentials)
@@ -265,6 +266,34 @@ def get_scan_history() -> ScanHistory:
 class ScanImport(BaseModel):
     events: list[dict] = Field(min_length=1, max_length=20000)
     synthetic: bool = False
+    preview_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+
+
+async def read_scan_body(request: Request) -> ScanImport:
+    import json
+    from pydantic import ValidationError
+    content = bytearray()
+    async for chunk in request.stream():
+        content.extend(chunk)
+        if len(content) > 10 * 1024 * 1024 + 4096:
+            raise HTTPException(413, "Report request exceeds 10 MB")
+    try:
+        return ScanImport.model_validate(json.loads(content))
+    except (ValueError, ValidationError) as exc:
+        if isinstance(exc, ValidationError):
+            location = exc.errors()[0]["loc"]
+            if len(location) > 1 and location[0] == "events" and isinstance(location[1], int):
+                raise HTTPException(422, f"Event {location[1] + 1}: expected an OCSF object") from exc
+        raise HTTPException(422, "Expected valid JSON with 1–20,000 OCSF event objects and a valid preview ID") from exc
+
+
+@app.post("/api/v1/scans/preview", dependencies=[Depends(require_write_token)])
+def preview_scan(body: Annotated[ScanImport, Depends(read_scan_body)], history: Annotated[ScanHistory, Depends(get_scan_history)]) -> dict:
+    from prowler_module.report_preview import preview_report
+    try:
+        return preview_report(history, body.events, synthetic=body.synthetic)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 @app.get("/api/v1/scans")
@@ -273,8 +302,12 @@ def scan_runs(history: Annotated[ScanHistory, Depends(get_scan_history)], accoun
 
 
 @app.post("/api/v1/scans/import", dependencies=[Depends(require_write_token), Depends(protect_data_write)])
-def import_scan(body: ScanImport, history: Annotated[ScanHistory, Depends(get_scan_history)]) -> dict:
+def import_scan(body: Annotated[ScanImport, Depends(read_scan_body)], history: Annotated[ScanHistory, Depends(get_scan_history)]) -> dict:
     try:
+        if body.preview_id:
+            from prowler_module.report_preview import preview_report
+            if preview_report(history, body.events, synthetic=body.synthetic)["id"] != body.preview_id:
+                raise HTTPException(409, "Report or evidence label changed. Preview the report again before importing.")
         return import_report(history, body.events, synthetic=body.synthetic)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -324,7 +357,7 @@ def find_or_404(db: Database, finding_id: str) -> Finding:
 
 @app.get("/api/v1/health")
 def health() -> dict:
-    return {"status": "ok", "version": "0.9.1", "mode": "local-development"}
+    return {"status": "ok", "version": "0.9.2", "mode": "local-development"}
 
 
 @app.get("/api/v1/posture/summary")

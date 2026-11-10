@@ -65,3 +65,17 @@ Before replacing your installation, stop the launcher and back up runtime data p
 - **Old snapshot unavailable:** reimport the original report. Current findings are not substituted for missing historical evidence.
 
 This is a local preview, not a hardened hosted service. See [web scanning limits](web-scanning.md).
+
+## Installation diagnostics
+
+Run `bash scripts/check-linux.sh` on Linux/WSL, or double-click **Check CloudSentinel.cmd** on Windows. Use `powershell -File scripts/check-windows.ps1 -Distro Ubuntu-24.04` to choose a WSL distribution. The check reports the application Python environment, imports, dependency consistency, Node.js/npm, frontend installation, disk space, ports and local API health. It does not install packages, read credentials, call AWS/AI, or stop other processes. Startup runs the prerequisite checks automatically. For machine-readable output, use `bash scripts/check-linux.sh --json`.
+
+## Guided AWS connection
+
+Settings explains temporary credentials, backend profiles, role/environment credentials and IAM user access keys. Verify the returned account before running read-access diagnostics. Diagnostics name the inventory API operations that failed; these are a subset of the permissions Prowler may need, and do not prove complete scan access. No IAM policies are changed automatically.
+
+Temporary credentials can include an optional operator-supplied expiration. It is not inferred from the token or verified by STS. Unknown expiration is explicitly shown as unknown. At a supplied expiry, new inventory/scan connections are blocked until reconnecting; ongoing scans still depend on AWS's actual credential validity. Temporary credentials are memory-only. See [AWS temporary credential documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_request.html).
+
+## Preview an imported report
+
+Scan History → Preview report validates a JSON report before adding it to your workspace. Review the account, scan time, event/outcome counts, repeated observations and exact-report duplicate notice, then choose Confirm import. A report with no FAIL findings still appears in Scan History. Validation uses a private temporary database that is removed after preview; it does not add report data to the workspace or send evidence to AI. Changing the file or synthetic label requires another preview. Errors identify the event number where possible. Importing older evidence preserves newer current findings and does not verify remediation.

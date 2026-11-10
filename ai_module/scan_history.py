@@ -39,67 +39,71 @@ class ScanHistory:
         from prowler_module.scanner import ProwlerScanner
         observations = {}
         times = []
-        for event in events:
-            if not isinstance(event, dict):
-                raise ValueError("Each event must be an object")
-            for field in ("cloud", "finding_info", "unmapped", "metadata", "remediation"):
-                if event.get(field) is not None and not isinstance(event[field], dict):
-                    raise ValueError(f"{field} must be an object")
-            resources = event.get("resources") or []
-            if not isinstance(resources, list) or any(not isinstance(r, dict) for r in resources):
-                raise ValueError("resources must be an array of objects")
-            cloud = event.get("cloud") or {}
-            account = cloud.get("account") or {}
-            product = (event.get("metadata") or {}).get("product") or {}
-            if not isinstance(account, dict) or not isinstance(product, dict):
-                raise ValueError("account and product must be objects")
-            unmapped = event.get("unmapped") or {}
-            info = event.get("finding_info") or {}
-            resource = resources[0] if resources else {}
-            account_id = account.get("uid") or event.get("cloud_account_uid") or ""
-            region = resource.get("region") or event.get("region") or cloud.get("region") or ""
-            resource_id = resource.get("uid") or resource.get("name") or event.get("resource_uid") or event.get("resource") or ""
-            uid = info.get("uid") or ""
-            if not isinstance(uid, str):
-                raise ValueError("Finding UID must be a string")
-            analytic = info.get("analytic") or {}
-            if not isinstance(analytic, dict):
-                raise ValueError("finding_info.analytic must be an object")
-            check_id = unmapped.get("check_id") or analytic.get("uid") or ProwlerScanner._derive_check_id(uid) or "unknown_check"
-            version = unmapped.get("check_version") or product.get("version") or "unknown"
-            provider = cloud.get("provider") or "aws"
-            identity = [provider, account_id, region, resource_id, check_id, version]
-            if any(not isinstance(v, str) or len(v) > 4096 for v in identity):
-                raise ValueError("Identity fields must be strings of at most 4096 characters")
-            provider = provider.lower()
-            identity[0] = provider
-            timestamp = event_time(event)
-            key = hashlib.sha256(json.dumps(identity).encode()).hexdigest()
-            status = str(event.get("status_code", "UNKNOWN")).upper()
-            status = "FAIL" if status == "FAILED" else status
-            if status not in {"PASS", "FAIL", "MANUAL"}:
-                status = "UNKNOWN"
-            complete = all(identity[1:5]) and check_id != "unknown_check" and len(resources) <= 1
-            item = {
-                "provider": provider,
-                "source_scan_id": str((event.get("unmapped") or {}).get("scan_id") or ""),
-                "key": key, "account": account_id, "region": region,
-                "resource": resource_id, "check": check_id, "version": version,
-                "status": status, "comparable": bool(complete and timestamp),
-                "scanned_at": timestamp.isoformat() if timestamp else None,
-            }
-            if key in observations:
-                previous = observations[key]
-                if previous["status"] != status:
-                    item["status"] = "CONFLICT"
-                item["comparable"] &= previous["comparable"]
-                if item["scanned_at"] != previous["scanned_at"]:
-                    item["comparable"] = False
-                    item["scanned_at"] = min(item["scanned_at"] or "", previous["scanned_at"] or "") or None
-                if item["source_scan_id"] != previous["source_scan_id"]:
-                    item["comparable"] = False
-            observations[key] = item
-            times.append(timestamp)
+        for index, event in enumerate(events, 1):
+            try:
+                if not isinstance(event, dict):
+                    raise ValueError("Each event must be an object")
+                for field in ("cloud", "finding_info", "unmapped", "metadata", "remediation"):
+                    if event.get(field) is not None and not isinstance(event[field], dict):
+                        raise ValueError(f"{field} must be an object")
+                resources = event.get("resources") or []
+                if not isinstance(resources, list) or any(not isinstance(r, dict) for r in resources):
+                    raise ValueError("resources must be an array of objects")
+                cloud = event.get("cloud") or {}
+                account = cloud.get("account") or {}
+                product = (event.get("metadata") or {}).get("product") or {}
+                if not isinstance(account, dict) or not isinstance(product, dict):
+                    raise ValueError("account and product must be objects")
+                unmapped = event.get("unmapped") or {}
+                info = event.get("finding_info") or {}
+                resource = resources[0] if resources else {}
+                account_id = account.get("uid") or event.get("cloud_account_uid") or ""
+                region = resource.get("region") or event.get("region") or cloud.get("region") or ""
+                resource_id = resource.get("uid") or resource.get("name") or event.get("resource_uid") or event.get("resource") or ""
+                uid = info.get("uid") or ""
+                if not isinstance(uid, str):
+                    raise ValueError("Finding UID must be a string")
+                analytic = info.get("analytic") or {}
+                if not isinstance(analytic, dict):
+                    raise ValueError("finding_info.analytic must be an object")
+                check_id = unmapped.get("check_id") or analytic.get("uid") or ProwlerScanner._derive_check_id(uid) or "unknown_check"
+                version = unmapped.get("check_version") or product.get("version") or "unknown"
+                provider = cloud.get("provider") or "aws"
+                identity = [provider, account_id, region, resource_id, check_id, version]
+                if any(not isinstance(v, str) or len(v) > 4096 for v in identity):
+                    raise ValueError("Identity fields must be strings of at most 4096 characters")
+                provider = provider.lower()
+                identity[0] = provider
+                timestamp = event_time(event)
+                key = hashlib.sha256(json.dumps(identity).encode()).hexdigest()
+                status = str(event.get("status_code", "UNKNOWN")).upper()
+                status = "FAIL" if status == "FAILED" else status
+                if status not in {"PASS", "FAIL", "MANUAL"}:
+                    status = "UNKNOWN"
+                complete = all(identity[1:5]) and check_id != "unknown_check" and len(resources) <= 1
+                item = {
+                    "provider": provider,
+                    "source_scan_id": str((event.get("unmapped") or {}).get("scan_id") or ""),
+                    "key": key, "account": account_id, "region": region,
+                    "resource": resource_id, "check": check_id, "version": version,
+                    "status": status, "comparable": bool(complete and timestamp),
+                    "scanned_at": timestamp.isoformat() if timestamp else None,
+                }
+                if key in observations:
+                    previous = observations[key]
+                    if previous["status"] != status:
+                        item["status"] = "CONFLICT"
+                    item["comparable"] &= previous["comparable"]
+                    if item["scanned_at"] != previous["scanned_at"]:
+                        item["comparable"] = False
+                        item["scanned_at"] = min(item["scanned_at"] or "", previous["scanned_at"] or "") or None
+                    if item["source_scan_id"] != previous["source_scan_id"]:
+                        item["comparable"] = False
+                observations[key] = item
+                times.append(timestamp)
+            except (ValueError, TypeError, AttributeError, IndexError) as exc:
+                detail = str(exc) if isinstance(exc, ValueError) else "Malformed OCSF fields"
+                raise ValueError(f"Event {index}: {detail}") from exc
         canonical = json.dumps(sorted(json.dumps(e, sort_keys=True) for e in events))
         run_id = hashlib.sha256((str(synthetic) + canonical).encode()).hexdigest()
         scanned_at = max(times).isoformat() if all(times) else None

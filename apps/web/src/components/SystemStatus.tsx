@@ -8,6 +8,6 @@ export default function SystemStatus(){
  useEffect(()=>{void check();},[check]);
  if(!error)return null;
  return <div className="notice error-inline" role="status"><div><b>Local API needs attention</b>
- <p>{error}</p><p>Start CloudSentinel, then reload the page to refresh its data.</p>
+ <p>{error}</p><p>Run Check CloudSentinel.cmd (Windows) or bash scripts/check-linux.sh (Linux) for dependency, port and API checks. Start CloudSentinel, then reload the page.</p>
  <div className="ai-actions"><button className="btn-outline" disabled={checking} onClick={()=>void check()}>Check connection</button>{error&&<button className="btn-outline" onClick={()=>window.location.reload()}>Reload page</button>}</div></div></div>;
 }

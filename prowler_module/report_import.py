@@ -14,7 +14,7 @@ def import_report(history: ScanHistory, events: list[dict], *, synthetic=False, 
     findings = {}
     with history.connect() as con:
         result = history.ingest(events, synthetic=synthetic, connection=con)
-        for event in events:
+        for index, event in enumerate(events, 1):
             if not parser._is_fail(event):
                 continue
             try:
@@ -23,7 +23,7 @@ def import_report(history: ScanHistory, events: list[dict], *, synthetic=False, 
                 normalized = dict(event, time_dt=(timestamp or datetime(1970, 1, 1, tzinfo=timezone.utc)).isoformat())
                 finding = parser._to_finding(normalized)
             except (TypeError, AttributeError, ValueError, IndexError) as exc:
-                raise ValueError("Malformed FAIL finding; no report data was saved") from exc
+                raise ValueError(f"Event {index}: malformed FAIL finding; no report data was saved") from exc
             if synthetic:
                 # A demo import must not overwrite the same real finding's evidence.
                 finding.finding_id = "demo-" + hashlib.sha256(finding.finding_id.encode()).hexdigest()[:24]
