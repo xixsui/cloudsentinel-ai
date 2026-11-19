@@ -41,7 +41,7 @@ The entries below summarize recorded development milestones. Versions before the
 
 | Version | Main changes |
 | --- | --- |
-| v0.9.3 — local development | Scan summaries with represented scope and unknown-coverage notices; comparison reasons and Later PASS labeling; local HTML/CSV exports with private defaults, optional notes/saved AI, snapshot evidence, and spreadsheet/HTML output protections. |
+| [v0.9.3-preview.1](https://github.com/xixsui/cloudsentinel-ai/releases/tag/v0.9.3-preview.1) | Scan summaries with represented scope and unknown-coverage notices; comparison reasons and Later PASS labeling; local HTML/CSV exports with private defaults, optional notes/saved AI, snapshot evidence, and spreadsheet/HTML output protections. |
 | [v0.9.2-preview.1](https://github.com/xixsui/cloudsentinel-ai/releases/tag/v0.9.2-preview.1) | Added standalone/startup installation diagnostics, guided AWS connection with optional declared session expiry, operation-specific read-access errors, and report preview with explicit confirmation, duplicate notices and event-level errors. Live AWS acceptance is deferred. |
 | [v0.9.1-preview.1](https://github.com/xixsui/cloudsentinel-ai/releases/tag/v0.9.1-preview.1) | Windows/WSL and Linux start/stop launchers; managed processes and duplicate-start protection; pinned Python 3.12/npm installation; validated workspace backup and restore with a recovery copy; API failure recovery guidance; a compact Overview hint that hides after connecting AWS or importing reports; hidden disconnected inventory and empty filters. |
 | [v0.9.0-preview.1](https://github.com/xixsui/cloudsentinel-ai/releases/tag/v0.9.0-preview.1) | First public release. Consolidated the local prototype with report import fixes, scan history/comparison and immutable evidence snapshots, dedicated AI/AWS Settings, backend credential storage, resource inventory, Prowler setup and scoped scan jobs, finding deletion, and explicit remediation rechecks. Added English installation documentation and downloadable source/checksum assets. |
@@ -63,20 +63,24 @@ For downloadable public versions and full release notes, see [GitHub Releases](h
 
 ## Interface
 
-Screenshots show an empty, disconnected workspace. No real AWS accounts, credentials or scan reports are displayed.
+Screenshots show v0.9.3: an empty, disconnected workspace and a report-export example using synthetic fixtures. No real AWS accounts, credentials or scan reports are displayed.
 
 ### Overview and first use
 
-![Empty workspace overview](docs/images/overview.png)
+![Empty workspace overview](docs/images/overview-v093.jpg)
 
 <details>
 <summary>Scan readiness and settings</summary>
 
-![Scan readiness checks](docs/images/scans.png)
+![Scan readiness checks](docs/images/scans-v093.jpg)
 
-![AWS connection settings with empty credential fields](docs/images/settings.png)
+![Settings and AWS connection guidance](docs/images/settings-v093.jpg)
 
 </details>
+
+### Report export (synthetic example)
+
+![Report export privacy controls and synthetic scan history](docs/images/report-export-v093.jpg)
 
 ## Development
 
@@ -86,3 +90,4 @@ python -m pytest -q
 cd apps/web
 npm run build
 ```
+
