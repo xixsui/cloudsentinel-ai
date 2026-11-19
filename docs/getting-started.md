@@ -79,3 +79,13 @@ Temporary credentials can include an optional operator-supplied expiration. It i
 ## Preview an imported report
 
 Scan History → Preview report validates a JSON report before adding it to your workspace. Review the account, scan time, event/outcome counts, repeated observations and exact-report duplicate notice, then choose Confirm import. A report with no FAIL findings still appears in Scan History. Validation uses a private temporary database that is removed after preview; it does not add report data to the workspace or send evidence to AI. Changing the file or synthetic label requires another preview. Errors identify the event number where possible. Importing older evidence preserves newer current findings and does not verify remediation.
+
+## Scan summaries and exports
+
+In Scan History, select a stored report to review its account/region scope, scan time, normalized outcome counts and check IDs. Service names are labeled as reported, inferred from a recognized check-ID prefix, or unknown. This is the scope represented by the report, not an inventory of everything that was scanned. Missing services and checks remain unknown. Legacy reports without recorded error/skip metadata show Not recorded; reimport the original report to refresh derived parsing.
+
+Comparison explains each outcome. Later PASS means a later matching scanner observation, not a verified remediation workflow. Missing, ambiguous, non-newer, manual and conflicting evidence cannot resolve a FAIL.
+
+Download HTML for reading/printing or CSV for a spreadsheet. Both include summary context and historical FAIL snapshots; the HTML also lists all represented check IDs. PASS-only scans produce a summary with no FAIL rows. Older reports without snapshots must be reimported; current findings are never substituted.
+
+By default exports hide account/resource fields, omit finding titles/descriptions, and exclude notes/AI. Check IDs and regions remain, with best-effort removal of known identifiers; review the file before sharing. Enabling sensitive fields includes account/resource IDs and free-text details. Notes and latest saved Web Advisor text require that explicit setting because they may contain identifiers. Raw OCSF evidence and configured credential stores are never included. Workflow state, notes and AI are current at export and may concern newer evidence, clearly separate from historical scan evidence. No AI call is made. Exports are limited to 20 MB; HTML escapes imported text and contains no executable scripts, while CSV neutralizes formula-like cell prefixes.

@@ -110,3 +110,5 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 
 .aws-connection-steps { padding-left: 1.4rem; display: grid; gap: .65rem; }
 .settings-provider summary { cursor: pointer; font-weight: 600; padding: .5rem 0; }
+
+.report-options{display:grid;gap:12px;margin:16px 0}.report-options label{display:flex;align-items:flex-start;gap:10px}.report-options input[type=checkbox]{width:18px;height:18px;flex:0 0 18px;margin:2px 0 0}

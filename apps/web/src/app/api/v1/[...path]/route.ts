@@ -7,9 +7,9 @@ async function proxy(req: NextRequest, segments: string[], method: "GET" | "PATC
     return NextResponse.json({ detail: "Invalid path" }, { status: 400 });
   }
   const endpoint = segments.join("/");
-  const allowedGet = /^(workspace\/status|scans\/jobs|settings\/(ai|aws|scanner)|aws\/inventory|scans|scans\/compare|health|posture\/summary|findings|findings\/[\w-]+|remediations|remediations\/[\w-]+\/activity|ai\/status|findings\/[\w-]+\/ai\/(history|preview))$/;
+  const allowedGet = /^(scans\/[a-f0-9]{64}\/summary|workspace\/status|scans\/jobs|settings\/(ai|aws|scanner)|aws\/inventory|scans|scans\/compare|health|posture\/summary|findings|findings\/[\w-]+|remediations|remediations\/[\w-]+\/activity|ai\/status|findings\/[\w-]+\/ai\/(history|preview))$/;
   const allowedPatch = /^remediations\/[\w-]+$/;
-  const allowedPost = /^(settings\/scanner\/install|findings\/[\w-]+\/recheck|scans\/start|scans\/jobs\/[a-f0-9]+\/cancel|settings\/aws\/(connect|disconnect|connect-saved|remove-saved)|settings\/data\/(delete|backup|preview|restore)|aws\/inventory\/refresh|scans\/(import|preview)|findings\/[\w-]+\/ai\/analyze)$/;
+  const allowedPost = /^(scans\/[a-f0-9]{64}\/export|settings\/scanner\/install|findings\/[\w-]+\/recheck|scans\/start|scans\/jobs\/[a-f0-9]+\/cancel|settings\/aws\/(connect|disconnect|connect-saved|remove-saved)|settings\/data\/(delete|backup|preview|restore)|aws\/inventory\/refresh|scans\/(import|preview)|findings\/[\w-]+\/ai\/analyze)$/;
   const allowedPut = /^(settings\/ai\/(default|credential)|findings\/[\w-]+\/ai\/runs\/[0-9]+\/feedback)$/;
   const allowed = method === "GET" ? allowedGet : method === "PATCH" ? allowedPatch : method === "PUT" ? allowedPut : allowedPost;
   if (!allowed.test(endpoint)) return NextResponse.json({ detail: "Not found" }, { status: 404 });

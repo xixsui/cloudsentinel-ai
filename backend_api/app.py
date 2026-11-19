@@ -13,6 +13,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated, Literal
 
+from fastapi import Path as APIPath
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import request_validation_exception_handler
@@ -40,7 +41,7 @@ from backend_api.scanner_setup import manager as scanner_setup
 app = FastAPI(
     title="CloudSentinel AI Local API",
     description="v0.7 development API: local operator only, not an authenticated SaaS platform.",
-    version="0.9.2",
+    version="0.9.3",
     docs_url="/docs",
     redoc_url=None,
 )
@@ -325,6 +326,31 @@ def compare_scans(before: Annotated[str, Query(pattern=r"^[a-f0-9]{64}$")],
         raise HTTPException(422, str(exc)) from exc
 
 
+@app.get("/api/v1/scans/{scan_id}/summary")
+def scan_summary(scan_id: Annotated[str, APIPath(pattern=r"^[a-f0-9]{64}$")],
+                 history: Annotated[ScanHistory, Depends(get_scan_history)]) -> dict:
+    from backend_api.scan_reports import summary
+    return summary(history, scan_id)
+
+
+class ReportExport(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    format: Literal["html", "csv"] = "html"
+    include_identifiers: bool = False
+    include_notes: bool = False
+    include_ai: bool = False
+
+
+@app.post("/api/v1/scans/{scan_id}/export", dependencies=[Depends(require_write_token), Depends(protect_data_write)])
+def export_scan(scan_id: Annotated[str, APIPath(pattern=r"^[a-f0-9]{64}$")], body: ReportExport,
+                history: Annotated[ScanHistory, Depends(get_scan_history)]) -> dict:
+    from backend_api.scan_reports import export_report
+    try:
+        return export_report(history, scan_id, **body.model_dump())
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
 
 def serialize_finding(f: Finding, *, detail: bool = False) -> dict:
     result = {
@@ -357,7 +383,7 @@ def find_or_404(db: Database, finding_id: str) -> Finding:
 
 @app.get("/api/v1/health")
 def health() -> dict:
-    return {"status": "ok", "version": "0.9.2", "mode": "local-development"}
+    return {"status": "ok", "version": "0.9.3", "mode": "local-development"}
 
 
 @app.get("/api/v1/posture/summary")

@@ -76,12 +76,16 @@ class ScanHistory:
                 identity[0] = provider
                 timestamp = event_time(event)
                 key = hashlib.sha256(json.dumps(identity).encode()).hexdigest()
-                status = str(event.get("status_code", "UNKNOWN")).upper()
+                reported_status = str(event.get("status_code", "UNKNOWN")).upper()[:80]
+                status = reported_status
                 status = "FAIL" if status == "FAILED" else status
                 if status not in {"PASS", "FAIL", "MANUAL"}:
                     status = "UNKNOWN"
                 complete = all(identity[1:5]) and check_id != "unknown_check" and len(resources) <= 1
                 item = {
+                    "reported_status": reported_status,
+                    "reported_statuses": [reported_status],
+                    "service": str(unmapped.get("service") or "")[:100],
                     "provider": provider,
                     "source_scan_id": str((event.get("unmapped") or {}).get("scan_id") or ""),
                     "key": key, "account": account_id, "region": region,
@@ -91,6 +95,7 @@ class ScanHistory:
                 }
                 if key in observations:
                     previous = observations[key]
+                    item["reported_statuses"] = sorted(set(previous["reported_statuses"] + item["reported_statuses"]))
                     if previous["status"] != status:
                         item["status"] = "CONFLICT"
                     item["comparable"] &= previous["comparable"]
@@ -165,17 +170,29 @@ class ScanHistory:
             if not ((a and a["status"] == "FAIL") or (b and b["status"] == "FAIL")):
                 continue
             outcome = "Not Rechecked"
+            reason = "No comparable later PASS or FAIL for the same account, region, resource, check and version."
+            if not b:
+                reason = "The check/resource is absent from the later report; absence does not mean fixed."
+            elif not b["comparable"] or (a and not a["comparable"]):
+                reason = "Missing or ambiguous identity/time prevents a reliable comparison."
+            elif b["status"] not in {"PASS", "FAIL"}:
+                reason = "The later outcome is manual, unknown or conflicting; it cannot resolve a FAIL."
             if b and b["comparable"] and (not a or a["comparable"]):
                 fresh = not a or parse_dt(b["scanned_at"]) > parse_dt(a["scanned_at"])
                 if a and a.get("source_scan_id") and a["source_scan_id"] == b.get("source_scan_id"):
                     fresh = False
+                if not fresh:
+                    reason = "Evidence is not newer, or both observations identify the same source scan."
                 if fresh and b["status"] == "FAIL" and (not a or a["status"] == "PASS"):
                     outcome = "New"
+                    reason = "FAIL is first observed in these selected reports, or follows an earlier PASS."
                 elif fresh and a and a["status"] == "FAIL":
                     outcome = {"FAIL": "Persisting", "PASS": "Resolved"}.get(b["status"], outcome)
+                    if outcome == "Persisting": reason = "A newer comparable observation still reports FAIL."
+                    elif outcome == "Resolved": reason = "A newer matching observation reports PASS; this is not remediation workflow verification."
             item = dict(b or a)
             item["account"] = "…" + item["account"][-4:] if item["account"] else "Unknown"
-            item.update(outcome=outcome, before_status=a["status"] if a else None,
+            item.update(reason=reason, before_time=a["scanned_at"] if a else None, after_time=b["scanned_at"] if b else None, outcome=outcome, before_status=a["status"] if a else None,
                         after_status=b["status"] if b else None)
             items.append(item)
         return {"items": items, "counts": {s: sum(i["outcome"] == s for i in items)
